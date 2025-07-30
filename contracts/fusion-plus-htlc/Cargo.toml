@@ -1,0 +1,18 @@
+[package]
+name = "fusion-plus-htlc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+near-sdk = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+near-workspaces = { workspace = true }
+tokio = { workspace = true }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
