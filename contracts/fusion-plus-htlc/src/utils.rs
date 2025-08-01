@@ -1,15 +1,12 @@
 use near_sdk::env;
-use sha2::{Digest, Sha256};
 
-/// Validates that a secret matches a hashlock
+/// Validates that a secret matches a hashlock using keccak256 to match Ethereum
 pub fn validate_secret(secret: &str, hashlock: &str) -> bool {
     // Remove any 0x prefix if present
     let hashlock_clean = hashlock.trim_start_matches("0x");
     
-    // Hash the secret
-    let mut hasher = Sha256::new();
-    hasher.update(secret.as_bytes());
-    let hash = hasher.finalize();
+    // Use keccak256 to match Ethereum's hashing
+    let hash = env::keccak256(secret.as_bytes());
     let hash_hex = hex::encode(hash);
     
     // Compare with hashlock
@@ -27,12 +24,10 @@ pub fn validate_timelock(timelock: u64) -> bool {
     timelock > env::block_timestamp() / 1_000_000_000 // Convert nanoseconds to seconds
 }
 
-/// Generates a unique HTLC ID
+/// Generates a unique HTLC ID using keccak256 to be consistent with Ethereum
 pub fn generate_htlc_id(sender: &str, receiver: &str, timestamp: u64) -> String {
     let data = format!("{}-{}-{}", sender, receiver, timestamp);
-    let mut hasher = Sha256::new();
-    hasher.update(data.as_bytes());
-    let hash = hasher.finalize();
+    let hash = env::keccak256(data.as_bytes());
     hex::encode(&hash[..16]) // Use first 16 bytes for shorter ID
 }
 
@@ -48,7 +43,8 @@ mod tests {
     #[test]
     fn test_validate_secret() {
         let secret = "mysecret";
-        let correct_hashlock = "2bb80d537b1da3e38bd30361aa855686bde0eacd7162fef6a25fe97bf527a25b";
+        // keccak256("mysecret") = 0x7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331
+        let correct_hashlock = "7c5ea36004851c764c44143b1dcb59679b11c9a68e5f41497f6cf3d480715331";
         let wrong_hashlock = "wrong_hash";
         
         assert!(validate_secret(secret, correct_hashlock));

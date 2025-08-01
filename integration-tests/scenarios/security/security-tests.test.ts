@@ -37,8 +37,9 @@ describe('Cross-Chain Security Tests', function() {
       {
         viewMethods: ['get_htlc', 'is_hashlock_used'],
         changeMethods: ['create_htlc', 'withdraw', 'refund'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
   });
   
   it('should prevent unauthorized withdrawal', async () => {
@@ -58,7 +59,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'security-test-1',
     };
     
-    const result = await htlcContract.create_htlc(
+    const result = await (htlcContract as any).create_htlc(
       { args: params },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -71,9 +72,11 @@ describe('Cross-Chain Security Tests', function() {
       nearAttacker,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     try {
       await attackerContract.withdraw(
@@ -108,7 +111,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'security-test-2',
     };
     
-    const result = await htlcContract.create_htlc(
+    const result = await (htlcContract as any).create_htlc(
       { args: params },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -155,7 +158,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'replay-test-1',
     };
     
-    await htlcContract.create_htlc(
+    await (htlcContract as any).create_htlc(
       { args: params1 },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -168,7 +171,7 @@ describe('Cross-Chain Security Tests', function() {
     };
     
     try {
-      await htlcContract.create_htlc(
+      await (htlcContract as any).create_htlc(
         { args: params2 },
         '300000000000000',
         formatNearAmount(swapAmount)
@@ -198,7 +201,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'secret-test-1',
     };
     
-    const result = await htlcContract.create_htlc(
+    const result = await (htlcContract as any).create_htlc(
       { args: params },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -218,9 +221,11 @@ describe('Cross-Chain Security Tests', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     for (const invalidSecret of invalidSecrets) {
       try {
@@ -258,7 +263,7 @@ describe('Cross-Chain Security Tests', function() {
     };
     
     try {
-      await htlcContract.create_htlc(
+      await (htlcContract as any).create_htlc(
         { args: params },
         '300000000000000',
         overflowAmount
@@ -288,7 +293,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'integrity-test-1',
     };
     
-    const result = await htlcContract.create_htlc(
+    const result = await (htlcContract as any).create_htlc(
       { args: legitParams },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -308,9 +313,11 @@ describe('Cross-Chain Security Tests', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     try {
       await receiverContract.withdraw(
@@ -347,7 +354,7 @@ describe('Cross-Chain Security Tests', function() {
       order_hash: 'reentrancy-test-1',
     };
     
-    const result = await htlcContract.create_htlc(
+    const result = await (htlcContract as any).create_htlc(
       { args: params },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -364,9 +371,11 @@ describe('Cross-Chain Security Tests', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     await receiverContract.withdraw(
       {

@@ -1,0 +1,14 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        { "name": "_orderHash", "type": "bytes32" },
+        { "name": "_secret", "type": "bytes32" }
+      ],
+      "name": "revealSecret",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]
+}

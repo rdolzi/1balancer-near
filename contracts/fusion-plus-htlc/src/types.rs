@@ -1,10 +1,11 @@
 use near_sdk::{AccountId, Timestamp};
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 use crate::Balance;
 
 /// HTLC State
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum HTLCState {
     Active,
@@ -40,7 +41,7 @@ pub struct HTLC {
 }
 
 /// Cross-chain timelock structure matching TimelocksLib.sol
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CrossChainTimelocks {
     /// Source chain withdrawal time (BASE)
@@ -94,6 +95,30 @@ pub struct HTLCRefundedEvent {
     pub htlc_id: String,
     pub sender: AccountId,
     pub amount: Balance,
+}
+
+/// Event log enum for event monitoring
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum EventLog {
+    HTLCCreated {
+        htlc_id: String,
+        sender: AccountId,
+        receiver: AccountId,
+        amount: String,
+        hashlock: String,
+        timelock: u64,
+    },
+    SecretRevealed {
+        htlc_id: String,
+        secret: String,
+        amount: String,
+    },
+    HTLCRefunded {
+        htlc_id: String,
+        sender: AccountId,
+        amount: String,
+    },
 }
 
 /// Error messages

@@ -82,7 +82,6 @@ export async function setupNearConnection(): Promise<Near> {
     nodeUrl: testConfig.near.nodeUrl,
     walletUrl: `https://wallet.${testConfig.near.networkId}.near.org`,
     helperUrl: `https://helper.${testConfig.near.networkId}.near.org`,
-    explorerUrl: `https://explorer.${testConfig.near.networkId}.near.org`,
   });
 }
 

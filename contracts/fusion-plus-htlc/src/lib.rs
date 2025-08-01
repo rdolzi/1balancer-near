@@ -1,6 +1,7 @@
 use near_sdk::{near, env, log, AccountId, Promise, NearToken, PromiseOrValue, PanicOnDefault};
-use near_sdk::store::{LookupMap, UnorderedSet};
+use near_sdk::store::{LookupMap, UnorderedSet, Vector};
 use near_sdk::json_types::U128;
+use near_sdk::borsh::{self, BorshSerialize};
 
 mod types;
 mod utils;
@@ -16,6 +17,15 @@ use utils::{validate_hashlock, validate_timelock, generate_htlc_id, current_time
 // Type alias for backward compatibility
 pub type Balance = u128;
 
+/// Storage keys for efficient storage management
+#[derive(BorshSerialize)]
+pub enum StorageKey {
+    HTLCs,
+    ActiveHTLCs { account_id: AccountId },
+    SupportedTokens,
+    HTLCIds,
+}
+
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct FusionPlusContract {
@@ -29,6 +39,8 @@ pub struct FusionPlusContract {
     eth_orchestrator: String,
     /// Supported tokens
     supported_tokens: UnorderedSet<AccountId>,
+    /// Vector of all HTLC IDs for iteration
+    htlc_ids: Vector<String>,
 }
 
 #[near]
@@ -37,10 +49,11 @@ impl FusionPlusContract {
     pub fn new(owner: AccountId) -> Self {
         Self {
             owner,
-            htlcs: LookupMap::new(b"h"),
-            active_htlcs: LookupMap::new(b"a"),
+            htlcs: LookupMap::new(StorageKey::HTLCs.try_to_vec().unwrap()),
+            active_htlcs: LookupMap::new(b"a"), // Will be updated per account
             eth_orchestrator: String::new(),
-            supported_tokens: UnorderedSet::new(b"t"),
+            supported_tokens: UnorderedSet::new(StorageKey::SupportedTokens.try_to_vec().unwrap()),
+            htlc_ids: Vector::new(StorageKey::HTLCIds.try_to_vec().unwrap()),
         }
     }
     
@@ -133,13 +146,15 @@ impl FusionPlusContract {
 
         // Store HTLC
         self.htlcs.insert(htlc_id.clone(), htlc.clone());
+        self.htlc_ids.push(htlc_id.clone());
 
         // Add to active HTLCs
-        if let Some(mut active_htlcs) = self.active_htlcs.get_mut(&sender) {
+        if let Some(active_htlcs) = self.active_htlcs.get_mut(&sender) {
             active_htlcs.insert(htlc_id.clone());
         } else {
+            let storage_key = StorageKey::ActiveHTLCs { account_id: sender.clone() };
             let mut active_htlcs = near_sdk::store::UnorderedSet::new(
-                format!("active_htlcs_{}", sender).as_bytes()
+                storage_key.try_to_vec().unwrap()
             );
             active_htlcs.insert(htlc_id.clone());
             self.active_htlcs.insert(sender.clone(), active_htlcs);
@@ -234,7 +249,7 @@ impl FusionPlusContract {
         self.htlcs.insert(htlc_id.clone(), htlc.clone());
         
         // Remove from active HTLCs
-        if let Some(mut active_htlcs) = self.active_htlcs.get_mut(&htlc.sender) {
+        if let Some(active_htlcs) = self.active_htlcs.get_mut(&htlc.sender) {
             active_htlcs.remove(&htlc_id);
         }
         // Check if we should remove the empty set
@@ -324,7 +339,7 @@ impl FusionPlusContract {
         self.htlcs.insert(htlc_id.clone(), htlc.clone());
         
         // Remove from active HTLCs
-        if let Some(mut active_htlcs) = self.active_htlcs.get_mut(&htlc.sender) {
+        if let Some(active_htlcs) = self.active_htlcs.get_mut(&htlc.sender) {
             active_htlcs.remove(&htlc_id);
         }
         // Check if we should remove the empty set
@@ -380,6 +395,51 @@ impl FusionPlusContract {
             .map(|htlc_id| self.refund(htlc_id))
             .collect()
     }
+    
+    /// Create multiple HTLCs in a single transaction (batch operation)
+    /// For native NEAR HTLCs - requires total deposit to match sum of all amounts
+    #[payable]
+    pub fn batch_create_htlc(&mut self, htlc_args: Vec<HTLCCreateArgs>) -> Vec<String> {
+        let total_deposit = env::attached_deposit().as_yoctonear();
+        let mut total_required = 0u128;
+        let mut htlc_ids = Vec::new();
+        
+        // First pass: validate and calculate total required deposit
+        for args in &htlc_args {
+            if args.token.as_str() == "near" {
+                total_required = total_required.saturating_add(args.amount);
+            }
+        }
+        
+        assert_eq!(
+            total_deposit, 
+            total_required, 
+            "Attached deposit must equal sum of all NEAR HTLC amounts"
+        );
+        
+        // Second pass: create HTLCs
+        for mut args in htlc_args {
+            if args.token.as_str() == "near" {
+                args.token = "near".parse::<AccountId>().unwrap();
+            }
+            
+            let htlc_id = self.internal_create_htlc(
+                args,
+                env::predecessor_account_id(),
+                if args.token.as_str() == "near" { args.amount } else { 0 }
+            );
+            htlc_ids.push(htlc_id);
+        }
+        
+        htlc_ids
+    }
+    
+    /// Withdraw multiple HTLCs by revealing secrets (batch operation)
+    pub fn batch_withdraw(&mut self, withdrawals: Vec<(String, String)>) -> Vec<Promise> {
+        withdrawals.into_iter()
+            .map(|(htlc_id, secret)| self.withdraw(htlc_id, secret))
+            .collect()
+    }
 
     // ===== CROSS-CHAIN COORDINATION METHODS =====
     
@@ -408,12 +468,56 @@ impl FusionPlusContract {
         near_timelock < base_timelock
     }
     
-    /// Get all active HTLCs for monitoring
+    /// Get all active HTLCs for monitoring with pagination
     pub fn get_active_htlcs(&self, from_index: u64, limit: u64) -> Vec<HTLCInfo> {
-        // Note: store module LookupMap doesn't provide iteration
-        // This would need to be tracked separately with an index
-        // For now, return empty vec
-        Vec::new()
+        self.htlc_ids
+            .iter()
+            .skip(from_index as usize)
+            .take(limit as usize)
+            .filter_map(|id| {
+                self.htlcs.get(&id).and_then(|htlc| {
+                    if htlc.state == HTLCState::Active {
+                        Some(HTLCInfo {
+                            htlc_id: id.clone(),
+                            sender: htlc.sender.clone(),
+                            receiver: htlc.receiver.clone(),
+                            amount: htlc.amount,
+                            hashlock: htlc.hashlock.clone(),
+                            timelock: htlc.timelock,
+                            state: htlc.state.clone(),
+                            order_hash: htlc.order_hash.clone(),
+                        })
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect()
+    }
+    
+    /// Get HTLCs with pagination (all states)
+    pub fn get_htlcs_paginated(&self, from_index: u64, limit: u64) -> (Vec<HTLCInfo>, bool) {
+        let htlcs: Vec<HTLCInfo> = self.htlc_ids
+            .iter()
+            .skip(from_index as usize)
+            .take((limit + 1) as usize)
+            .filter_map(|id| {
+                self.htlcs.get(&id).map(|htlc| HTLCInfo {
+                    htlc_id: id.clone(),
+                    sender: htlc.sender.clone(),
+                    receiver: htlc.receiver.clone(),
+                    amount: htlc.amount,
+                    hashlock: htlc.hashlock.clone(),
+                    timelock: htlc.timelock,
+                    state: htlc.state.clone(),
+                    order_hash: htlc.order_hash.clone(),
+                })
+            })
+            .collect();
+            
+        let has_more = htlcs.len() > limit as usize;
+        let result = if has_more { &htlcs[..limit as usize] } else { &htlcs };
+        (result.to_vec(), has_more)
     }
 
     // ===== FT RECEIVER METHODS =====
@@ -455,6 +559,51 @@ impl FusionPlusContract {
         
         // Return 0 to indicate all tokens were used
         PromiseOrValue::Value(U128(0))
+    }
+    
+    /// Get recent events for monitoring (used by orchestrator)
+    /// Returns events that occurred after the given timestamp
+    pub fn get_recent_events(&self, from_timestamp: u64) -> Vec<EventLog> {
+        let mut events = Vec::new();
+        let current_time = current_timestamp_sec();
+        
+        // Iterate through recent HTLCs and generate events
+        for htlc_id in self.htlc_ids.iter().rev() {
+            if let Some(htlc) = self.htlcs.get(&htlc_id) {
+                // Check if HTLC was created after the timestamp
+                if htlc.created_at > from_timestamp {
+                    if htlc.state == HTLCState::Active {
+                        events.push(EventLog::HTLCCreated {
+                            htlc_id: htlc_id.clone(),
+                            sender: htlc.sender.clone(),
+                            receiver: htlc.receiver.clone(),
+                            amount: htlc.amount.to_string(),
+                            hashlock: htlc.hashlock.clone(),
+                            timelock: htlc.timelock,
+                        });
+                    } else if htlc.state == HTLCState::Withdrawn && htlc.secret.is_some() {
+                        events.push(EventLog::SecretRevealed {
+                            htlc_id: htlc_id.clone(),
+                            secret: htlc.secret.clone().unwrap(),
+                            amount: htlc.amount.to_string(),
+                        });
+                    } else if htlc.state == HTLCState::Refunded {
+                        events.push(EventLog::HTLCRefunded {
+                            htlc_id: htlc_id.clone(),
+                            sender: htlc.sender.clone(),
+                            amount: htlc.amount.to_string(),
+                        });
+                    }
+                }
+                
+                // Limit to recent events only
+                if htlc.created_at < from_timestamp - 86400 { // 24 hours ago
+                    break;
+                }
+            }
+        }
+        
+        events
     }
 }
 

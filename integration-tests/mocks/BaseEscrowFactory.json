@@ -1,0 +1,15 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        { "name": "_escrowId", "type": "uint256" }
+      ],
+      "name": "getEscrow",
+      "outputs": [
+        { "name": "", "type": "address" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}

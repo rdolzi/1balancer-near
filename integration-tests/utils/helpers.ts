@@ -56,7 +56,8 @@ export async function waitForNearEvent(
       const events = await contract.account.connection.provider.query({
         request_type: 'view_access_key_list',
         account_id: contract.contractId,
-      });
+        finality: 'final',
+      } as any);
       
       // This is a placeholder - real implementation would use proper event indexing
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -77,11 +78,11 @@ export async function waitForEthereumEvent(
 ): Promise<ethers.EventLog> {
   return new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => {
-      contract.off(filter);
+      contract.off(filter as any);
       reject(new Error(`Timeout waiting for event ${eventName}`));
     }, timeout);
     
-    contract.once(filter, (...args) => {
+    contract.once(filter as any, (...args) => {
       clearTimeout(timeoutId);
       resolve(args[args.length - 1] as ethers.EventLog);
     });
@@ -111,7 +112,7 @@ export async function verifyHTLCStatesMatch(
   ethHtlcId: string
 ): Promise<boolean> {
   // Get NEAR HTLC state
-  const nearHtlc = await nearContract.view('get_htlc', { htlc_id: nearHtlcId });
+  const nearHtlc = await (nearContract as any).get_htlc({ htlc_id: nearHtlcId });
   
   // Get Ethereum HTLC state
   const ethHtlc = await ethContract.getHTLC(ethHtlcId);

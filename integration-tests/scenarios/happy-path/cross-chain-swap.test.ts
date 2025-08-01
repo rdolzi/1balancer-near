@@ -25,8 +25,8 @@ import {
 } from '../../utils/helpers';
 
 // Import Ethereum contract ABIs
-import FusionPlusHubABI from '../../../../1balancer/packages/hardhat/deployments/base-sepolia/FusionPlusHub.json';
-import EscrowFactoryABI from '../../../../1balancer/packages/hardhat/deployments/base-sepolia/BaseEscrowFactory.json';
+import FusionPlusHubABI from '../../mocks/FusionPlusHub.json';
+import EscrowFactoryABI from '../../mocks/BaseEscrowFactory.json';
 
 describe('Cross-Chain Atomic Swap - Happy Path', function() {
   this.timeout(120000); // 2 minute timeout for cross-chain operations
@@ -57,8 +57,9 @@ describe('Cross-Chain Atomic Swap - Happy Path', function() {
       {
         viewMethods: ['get_htlc', 'get_stats', 'is_hashlock_used'],
         changeMethods: ['create_htlc', 'withdraw', 'refund'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     // Setup Ethereum connection
     ethProvider = setupEthereumProvider();
@@ -145,7 +146,7 @@ describe('Cross-Chain Atomic Swap - Happy Path', function() {
       order_hash: nearOrderHash,
     };
     
-    const nearResult = await htlcContract.create_htlc(
+    const nearResult = await (htlcContract as any).create_htlc(
       { args: nearHTLCParams },
       '300000000000000', // gas
       formatNearAmount(swapAmount) // deposit
@@ -175,9 +176,11 @@ describe('Cross-Chain Atomic Swap - Happy Path', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     const withdrawResult = await receiverContract.withdraw(
       {
@@ -206,7 +209,7 @@ describe('Cross-Chain Atomic Swap - Happy Path', function() {
     // In real implementation, orchestrator would reveal secret on BASE
     // For testing, we simulate this
     const escrowAddress = await escrowFactory.computeEscrowAddress(
-      ethSender.address,
+      await ethSender.getAddress(),
       baseHTLCParams
     );
     
@@ -243,7 +246,7 @@ describe('Cross-Chain Atomic Swap - Happy Path', function() {
     console.log('Verifying final states...');
     
     // Check NEAR HTLC state
-    const nearHtlc = await htlcContract.view('get_htlc', { htlc_id: nearHtlcId });
+    const nearHtlc = await (htlcContract as any).get_htlc({ htlc_id: nearHtlcId });
     assertHTLCState(nearHtlc, 'Withdrawn');
     expect(nearHtlc.secret).to.equal(secret.slice(2));
     

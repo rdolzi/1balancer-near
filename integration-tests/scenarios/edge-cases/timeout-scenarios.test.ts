@@ -45,8 +45,9 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       {
         viewMethods: ['get_htlc', 'get_stats'],
         changeMethods: ['create_htlc', 'withdraw', 'refund'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     ethProvider = setupEthereumProvider();
     ethSender = getEthereumSigner(testConfig.ethereum.privateKeys.sender);
@@ -76,7 +77,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       order_hash: 'timeout-test-1',
     };
     
-    const nearResult = await htlcContract.create_htlc(
+    const nearResult = await (htlcContract as any).create_htlc(
       { args: nearHTLCParams },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -92,7 +93,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
     // Step 3: Refund on NEAR (should succeed)
     console.log('Attempting NEAR refund...');
     
-    const refundResult = await htlcContract.refund(
+    const refundResult = await (htlcContract as any).refund(
       { htlc_id: nearHtlcId },
       '300000000000000'
     );
@@ -100,7 +101,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
     console.log('NEAR refund successful');
     
     // Verify NEAR HTLC is refunded
-    const nearHtlc = await htlcContract.view('get_htlc', { htlc_id: nearHtlcId });
+    const nearHtlc = await (htlcContract as any).get_htlc({ htlc_id: nearHtlcId });
     assertHTLCState(nearHtlc, 'Refunded');
     
     // Step 4: BASE escrow (if created) should also be refundable
@@ -126,7 +127,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       order_hash: 'timeout-test-2',
     };
     
-    const nearResult = await htlcContract.create_htlc(
+    const nearResult = await (htlcContract as any).create_htlc(
       { args: nearHTLCParams },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -142,9 +143,11 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     try {
       await receiverContract.withdraw(
@@ -185,7 +188,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       order_hash: 'partial-test-1',
     };
     
-    const nearResult = await htlcContract.create_htlc(
+    const nearResult = await (htlcContract as any).create_htlc(
       { args: nearHTLCParams },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -208,9 +211,11 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     await receiverContract.withdraw(
       {
@@ -265,7 +270,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       order_hash: 'race-test-1',
     };
     
-    const nearResult = await htlcContract.create_htlc(
+    const nearResult = await (htlcContract as any).create_htlc(
       { args: nearHTLCParams },
       '300000000000000',
       formatNearAmount(swapAmount)
@@ -281,9 +286,11 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
       nearReceiver,
       testConfig.near.htlcContract,
       {
+        viewMethods: [],
         changeMethods: ['withdraw'],
+        useLocalViewExecution: false,
       }
-    );
+    ) as any;
     
     const withdrawPromise = receiverContract.withdraw(
       {
@@ -291,12 +298,12 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
         secret: secret.slice(2),
       },
       '300000000000000'
-    ).catch(err => ({ error: err }));
+    ).catch((err: any) => ({ error: err }));
     
-    const refundPromise = htlcContract.refund(
+    const refundPromise = (htlcContract as any).refund(
       { htlc_id: nearHtlcId },
       '300000000000000'
-    ).catch(err => ({ error: err }));
+    ).catch((err: any) => ({ error: err }));
     
     // Wait for both to complete
     const [withdrawResult, refundResult] = await Promise.all([
@@ -312,7 +319,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
     console.log(`✅ Race condition handled: ${withdrawSuccess ? 'withdraw' : 'refund'} succeeded`);
     
     // Verify final state
-    const finalHtlc = await htlcContract.view('get_htlc', { htlc_id: nearHtlcId });
+    const finalHtlc = await (htlcContract as any).get_htlc({ htlc_id: nearHtlcId });
     expect(['Withdrawn', 'Refunded']).to.include(finalHtlc.state);
   });
   
@@ -336,7 +343,7 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
         order_hash: `multi-timeout-${i}`,
       };
       
-      const result = await htlcContract.create_htlc(
+      const result = await (htlcContract as any).create_htlc(
         { args: params },
         '300000000000000',
         formatNearAmount('0.01')
@@ -353,15 +360,15 @@ describe('Cross-Chain Atomic Swap - Timeout Scenarios', function() {
     // Refund all
     const refundResults = await Promise.all(
       htlcIds.map(id => 
-        htlcContract.refund(
+        (htlcContract as any).refund(
           { htlc_id: id },
           '300000000000000'
-        ).catch(err => ({ id, error: err }))
+        ).catch((err: any) => ({ id, error: err }))
       )
     );
     
     // All should be refunded
-    const successCount = refundResults.filter(r => !('error' in r)).length;
+    const successCount = refundResults.filter((r: any) => !('error' in r)).length;
     expect(successCount).to.equal(htlcIds.length);
     
     console.log(`✅ Successfully refunded ${successCount} timed-out HTLCs`);
