@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 near-sdk = { workspace = true }
+borsh = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 

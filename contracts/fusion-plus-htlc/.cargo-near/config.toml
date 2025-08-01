@@ -1,0 +1,35 @@
+# Cargo NEAR configuration for Fusion+ HTLC contract
+# Based on NEAR best practices from Unite DeFi 2025 workshop
+
+[build]
+# Contract name
+contract_name = "fusion_plus_htlc"
+
+# Rust version requirement (must match rust-toolchain.toml)
+rust_version = "1.86.0"
+
+# Build flags
+build_flags = ["--target", "wasm32-unknown-unknown", "--release"]
+
+# ABI generation
+generate_abi = true
+embed_abi = true
+
+# Optimization settings
+[optimization]
+# Enable size optimization
+opt_level = "z"
+lto = true
+codegen_units = 1
+
+# Testing configuration
+[test]
+# Enable workspace tests
+workspace_tests = true
+
+# NEP-330 metadata (for contract standard compliance)
+[metadata]
+version = "0.1.0"
+link = "https://github.com/1balancer/1balancer-near"
+standards = ["NEP-141", "NEP-171"]
+build_command = ["cargo", "near", "build", "non-reproducible-wasm"]

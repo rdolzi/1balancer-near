@@ -1,6 +1,7 @@
-use near_sdk::{AccountId, Balance, Timestamp};
-use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{AccountId, Timestamp};
+use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Deserialize, Serialize};
+use crate::Balance;
 
 /// HTLC State
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -13,7 +14,7 @@ pub enum HTLCState {
 }
 
 /// Core HTLC structure that mirrors Ethereum Hub's Immutables
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, PartialEq, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct HTLC {
     /// The sender (maker in cross-chain terminology)
@@ -39,7 +40,7 @@ pub struct HTLC {
 }
 
 /// Cross-chain timelock structure matching TimelocksLib.sol
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct CrossChainTimelocks {
     /// Source chain withdrawal time (BASE)
@@ -53,7 +54,7 @@ pub struct CrossChainTimelocks {
 }
 
 /// HTLC creation parameters
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct HTLCCreateArgs {
     pub receiver: AccountId,

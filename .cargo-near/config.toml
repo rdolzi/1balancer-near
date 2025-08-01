@@ -1,0 +1,40 @@
+# Global Cargo NEAR configuration for 1Balancer NEAR workspace
+# Based on NEAR best practices from Unite DeFi 2025 workshop
+
+[build]
+# Default Rust version requirement
+rust_version = "1.86.0"
+
+# Default build flags
+build_flags = ["--target", "wasm32-unknown-unknown", "--release"]
+
+# ABI generation defaults
+generate_abi = true
+embed_abi = true
+
+# Optimization settings (for all contracts)
+[optimization]
+# Enable size optimization (critical for NEAR contracts)
+opt_level = "z"
+lto = true
+codegen_units = 1
+strip = true
+
+# Docker build settings (for Mac M1/M2 compatibility)
+[docker]
+# Use Docker for builds to ensure reproducibility
+# This also solves the ring dependency issue on Mac
+enabled = false
+image = "rust:1.86.0"
+
+# Testing configuration
+[test]
+# Enable workspace tests
+workspace_tests = true
+# Run tests in parallel
+parallel = true
+
+# NEP-330 metadata defaults
+[metadata]
+authors = ["1Balancer Team"]
+repository = "https://github.com/1balancer/1balancer-near"

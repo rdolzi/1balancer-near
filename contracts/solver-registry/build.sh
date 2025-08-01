@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# NEAR HTLC Contract Build Script
-echo "Building Fusion+ HTLC contract..."
+# Solver Registry Contract Build Script
+echo "Building Solver Registry contract..."
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -42,19 +42,12 @@ if [ $? -eq 0 ]; then
     # Create output directory
     mkdir -p ../../target/wasm32-unknown-unknown/release/
     
-    # Copy the wasm file from cargo-near output location
-    CARGO_NEAR_FILE="target/near/fusion_plus_htlc/fusion_plus_htlc.wasm"
+    # Copy the wasm file
+    cp target/wasm32-unknown-unknown/release/solver_registry.wasm ../../target/wasm32-unknown-unknown/release/
     
-    if [ -f "$CARGO_NEAR_FILE" ]; then
-        cp "$CARGO_NEAR_FILE" ../../target/wasm32-unknown-unknown/release/
-        
-        # Get file size
-        SIZE=$(ls -lh "$CARGO_NEAR_FILE" | awk '{print $5}')
-        echo -e "${GREEN}✓ Contract size: $SIZE${NC}"
-    else
-        echo -e "${RED}✗ WASM file not found at expected location${NC}"
-        exit 1
-    fi
+    # Get file size
+    SIZE=$(ls -lh target/wasm32-unknown-unknown/release/solver_registry.wasm | awk '{print $5}')
+    echo -e "${GREEN}✓ Contract size: $SIZE${NC}"
     
     # Run tests
     echo "Running tests..."

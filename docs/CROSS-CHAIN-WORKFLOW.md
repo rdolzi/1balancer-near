@@ -2,7 +2,8 @@
 
 ## Overview
 
-This document details the complete cross-chain atomic swap workflow between BASE (Ethereum L2) and NEAR Protocol, showing how the two chains coordinate to ensure atomic execution.
+This document details the complete cross-chain atomic swap workflow between BASE (Ethereum L2) and NEAR Protocol,
+showing how the two chains coordinate to ensure atomic execution.
 
 ## Workflow Architecture
 

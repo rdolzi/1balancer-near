@@ -13,7 +13,9 @@
 
 ## Overview
 
-The 1Balancer NEAR repository implements the NEAR Protocol side of the cross-chain atomic swap system, enabling trustless portfolio rebalancing between NEAR and EVM chains (primarily BASE). This architecture extends the Ethereum Hub design to support non-EVM chains through the Fusion+ protocol.
+The 1Balancer NEAR repository implements the NEAR Protocol side of the cross-chain atomic swap system,
+enabling trustless portfolio rebalancing between NEAR and EVM chains (primarily BASE).
+This architecture extends the Ethereum Hub design to support non-EVM chains through the Fusion+ protocol.
 
 ## System Architecture
 

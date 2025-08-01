@@ -1,4 +1,4 @@
-use near_sdk::{near, env, AccountId};
+use near_sdk::{near, AccountId};
 
 #[near(contract_state)]
 pub struct SolverRegistry {

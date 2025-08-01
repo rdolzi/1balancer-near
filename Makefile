@@ -28,8 +28,9 @@ install: check-rust
 		npm install -g near-cli; \
 	fi
 	@if ! command -v cargo-near &> /dev/null; then \
-		echo "Installing cargo-near..."; \
-		cargo install cargo-near; \
+		echo "Installing cargo-near (required for building NEAR contracts)..."; \
+		echo "This is the official NEAR contract build tool"; \
+		cargo install cargo-near --version 0.16.1; \
 	fi
 	@cd $(SOLVER_DIR) && npm install
 	@cd integration-tests && npm install
@@ -49,7 +50,7 @@ build-htlc: check-rust
 
 build-solver-registry: check-rust
 	@echo "Building Solver Registry contract..."
-	@cd $(CONTRACT_DIR)/solver-registry && cargo build --target wasm32-unknown-unknown --release
+	@cd $(CONTRACT_DIR)/solver-registry && cargo near build non-reproducible-wasm
 
 build-solver:
 	@echo "Building Shade Agent Solver..."
