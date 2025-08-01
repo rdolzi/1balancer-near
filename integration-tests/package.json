@@ -1,0 +1,29 @@
+{
+  "name": "1balancer-near-integration-tests",
+  "version": "1.0.0",
+  "description": "Cross-chain integration tests for 1Balancer NEAR integration",
+  "scripts": {
+    "test": "mocha --require ts-node/register 'scenarios/**/*.test.ts' --timeout 180000",
+    "test:happy": "mocha --require ts-node/register 'scenarios/happy-path/**/*.test.ts' --timeout 120000",
+    "test:edge": "mocha --require ts-node/register 'scenarios/edge-cases/**/*.test.ts' --timeout 180000",
+    "test:security": "mocha --require ts-node/register 'scenarios/security/**/*.test.ts' --timeout 120000",
+    "test:watch": "mocha --require ts-node/register 'scenarios/**/*.test.ts' --watch --watch-extensions ts",
+    "setup:accounts": "ts-node setup/create-test-accounts.ts",
+    "clean": "rm -rf coverage .nyc_output"
+  },
+  "dependencies": {
+    "near-api-js": "^3.0.0",
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/chai": "^4.3.11",
+    "@types/node": "^20.10.0",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "nyc": "^15.1.0"
+  }
+}
