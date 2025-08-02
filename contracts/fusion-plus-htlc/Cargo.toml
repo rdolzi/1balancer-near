@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-near-sdk = { workspace = true }
+near-sdk = { workspace = true, features = ["legacy"] }
+borsh = { version = "1.0", features = ["derive"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
