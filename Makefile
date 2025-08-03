@@ -71,6 +71,29 @@ deploy-testnet: build
 		fi \
 	'
 
+redeploy-testnet: build
+	@# Force redeploy existing contract with new code (preserves state)
+	@bash -c ' \
+		if [ -f "../.env" ]; then \
+			echo "📋 Loading NEAR credentials from .env file..."; \
+			set -a; \
+			source ../.env; \
+			set +a; \
+		fi; \
+		if [ -z "$$NEAR_MASTER_ACCOUNT" ]; then \
+			echo "❌ NEAR_MASTER_ACCOUNT not set. Please export or add to .env file."; \
+			exit 1; \
+		fi; \
+		HTLC_CONTRACT="fusion-htlc.$$NEAR_MASTER_ACCOUNT"; \
+		echo "🔄 Redeploying contract to: $$HTLC_CONTRACT"; \
+		echo "📝 Command used: near deploy $$HTLC_CONTRACT target/wasm32-unknown-unknown/release/fusion_plus_htlc.wasm --networkId testnet"; \
+		echo ""; \
+		echo "y" | near deploy "$$HTLC_CONTRACT" target/wasm32-unknown-unknown/release/fusion_plus_htlc.wasm --networkId testnet; \
+		echo ""; \
+		echo "✅ Contract redeployed successfully!"; \
+		echo "🌐 View on explorer: https://testnet.nearblocks.io/address/$$HTLC_CONTRACT"; \
+	'
+
 deploy-solver: build
 	./scripts/deploy/deploy-solver-tee.sh
 

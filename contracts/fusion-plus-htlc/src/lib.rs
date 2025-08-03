@@ -3,7 +3,7 @@ use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, AccountId, BorshStorageKey, PanicOnDefault, Promise, NearToken};
-use sha2::{Digest, Sha256};
+use sha3::{Digest, Keccak256};
 
 type Balance = u128;
 type Timestamp = u64;
@@ -161,8 +161,8 @@ impl FusionPlusHTLC {
             "Only receiver can withdraw"
         );
 
-        // Verify secret
-        let mut hasher = Sha256::new();
+        // Verify secret using Keccak-256 (matches BASE contract)
+        let mut hasher = Keccak256::new();
         hasher.update(&secret.0);
         let hash = hasher.finalize();
         

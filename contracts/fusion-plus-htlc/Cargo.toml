@@ -8,7 +8,7 @@ near-sdk = { workspace = true, features = ["legacy"] }
 borsh = { version = "1.0", features = ["derive"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
-sha2 = { workspace = true }
+sha3 = { workspace = true }
 hex = { workspace = true }
 
 [dev-dependencies]

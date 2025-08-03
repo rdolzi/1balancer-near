@@ -123,7 +123,7 @@ if [ "$HTLC_EXISTS" = false ]; then
     echo "   Deploying: fusion_plus_htlc.wasm"
     
     # Deploy the contract
-    near deploy "$HTLC_CONTRACT" target/wasm32-unknown-unknown/release/fusion_plus_htlc.wasm || {
+    near deploy "$HTLC_CONTRACT" target/wasm32-unknown-unknown/release/fusion_plus_htlc.wasm --networkId testnet || {
         echo "❌ Failed to deploy HTLC contract code"
         exit 1
     }
@@ -138,7 +138,14 @@ if [ "$HTLC_EXISTS" = false ]; then
     echo ""
     echo "✅ HTLC contract deployed successfully to $HTLC_CONTRACT!"
 else
-    echo "⏭️  Skipping HTLC deployment (already exists)"
+    echo "⏭️  HTLC contract already exists. To redeploy with new code:"
+    echo ""
+    echo "🔄 REDEPLOYMENT COMMAND (for updating existing contract):"
+    echo "   near deploy $HTLC_CONTRACT target/wasm32-unknown-unknown/release/fusion_plus_htlc.wasm --networkId testnet"
+    echo ""
+    echo "📝 Note: Redeployment replaces contract code but preserves state."
+    echo "   Add --force flag if needed: --force"
+    echo ""
 fi
 
 echo ""
